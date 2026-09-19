@@ -64,6 +64,7 @@ import {
 } from "~/components/onboarding/onboarding-learning-times";
 import { OnboardingSelect } from "~/components/onboarding/onboarding-select";
 import { StudyTimeFactContent } from "~/components/onboarding/study-time-fact-content";
+import { ReleaseInformationSheet } from "~/components/release-information-sheet";
 import { AnimatedFlowerLoader } from "~/components/ui/animated-flower-loader";
 import { BackButton, Button } from "~/components/ui/button";
 import {
@@ -207,20 +208,26 @@ const AUTH_CHOICE_FRAME = {
 const AUTH_BACKGROUND_TILE = {
 	size: 148,
 	radius: 32,
-	iconSize: 76,
-	leftX: -62,
-	centerX: 122.5,
-	rightX: 307,
-	fillColors: [
+	iconSize: 96,
+	columnStep: 184.5,
+	iconStrokeWidth: 2.4,
+	lightFillColors: [
 		"rgba(26,26,26,0)",
 		"rgba(26,26,26,0.06)",
 		"rgba(26,26,26,0.06)",
 		"rgba(26,26,26,0)",
 	],
+	darkFillColors: [
+		"rgba(255,255,255,0)",
+		"rgba(255,255,255,0.045)",
+		"rgba(255,255,255,0.045)",
+		"rgba(255,255,255,0)",
+	],
 } as const;
 
 export function AuthChoiceScreen() {
-	const { colors: COLORS } = useDayovaTheme();
+	const [showReleaseInformation, setShowReleaseInformation] = useState(false);
+	const { colors: COLORS, isDark } = useDayovaTheme();
 	const { width, height, fontScale } = useWindowDimensions();
 	const insets = useSafeAreaInsets();
 	const contentSizeLayout = useContentSizeLayout({
@@ -243,11 +250,18 @@ export function AuthChoiceScreen() {
 	if (contentSizeLayout.shouldStackInlineContent) {
 		return (
 			<View className="flex-1 bg-background">
+				<ReleaseInformationSheet
+					visible={showReleaseInformation}
+					onClose={() => setShowReleaseInformation(false)}
+				/>
 				<Stack.Screen options={{ title: "Dayova" }} />
 				<ThemedStatusBar />
 				<View pointerEvents="none" className="absolute inset-0 overflow-hidden">
 					<AuthBackgroundPattern
+						iconColor={COLORS.text}
+						isDark={isDark}
 						scale={Math.max(width / AUTH_CHOICE_FRAME.width, 0.78)}
+						viewportWidth={width}
 						yOffset={AUTH_CHOICE_FRAME.patternYOffset}
 					/>
 				</View>
@@ -276,7 +290,7 @@ export function AuthChoiceScreen() {
 								? undefined
 								: FadeInDown.duration(520).springify().damping(18)
 						}
-						className="h-28 w-28 items-center justify-center rounded-[28px] bg-card shadow-lg"
+						className="h-28 w-28 items-center justify-center rounded-[28px] border border-border bg-card"
 					>
 						<Image
 							source={require("../../../assets/onboarding/dayova-y.png")}
@@ -286,6 +300,9 @@ export function AuthChoiceScreen() {
 					</Animated.View>
 
 					<Text
+						accessibilityRole="button"
+						accessibilityLabel="Dayova, App-Informationen"
+						onPress={() => setShowReleaseInformation(true)}
 						allowFontScaling={false}
 						className="mt-6 text-center font-poppins font-semibold text-heading-1 text-text"
 						style={{
@@ -346,8 +363,25 @@ export function AuthChoiceScreen() {
 
 	return (
 		<View className="flex-1 bg-background">
+			<ReleaseInformationSheet
+				visible={showReleaseInformation}
+				onClose={() => setShowReleaseInformation(false)}
+			/>
 			<Stack.Screen options={{ title: "Dayova" }} />
 			<ThemedStatusBar />
+			<Animated.View
+				pointerEvents="none"
+				entering={reducedMotion ? undefined : FadeIn.duration(240)}
+				className="absolute inset-0 overflow-hidden"
+			>
+				<AuthBackgroundPattern
+					iconColor={COLORS.text}
+					isDark={isDark}
+					scale={frameScale}
+					viewportWidth={width}
+					yOffset={verticalPadding + AUTH_CHOICE_FRAME.patternYOffset}
+				/>
+			</Animated.View>
 			<ScrollView
 				contentInsetAdjustmentBehavior="never"
 				showsVerticalScrollIndicator={false}
@@ -366,23 +400,6 @@ export function AuthChoiceScreen() {
 					}}
 				>
 					<Animated.View
-						entering={reducedMotion ? undefined : FadeIn.duration(240)}
-						style={{
-							position: "absolute",
-							top: 0,
-							left: 0,
-							width: frameWidth,
-							height: frameHeight,
-							overflow: "hidden",
-						}}
-					>
-						<AuthBackgroundPattern
-							scale={frameScale}
-							yOffset={AUTH_CHOICE_FRAME.patternYOffset}
-						/>
-					</Animated.View>
-
-					<Animated.View
 						entering={reducedMotion ? undefined : FadeInDown.duration(240)}
 						style={{
 							position: "absolute",
@@ -398,9 +415,10 @@ export function AuthChoiceScreen() {
 								height: scaled(AUTH_CHOICE_FRAME.logoCard.size),
 								borderRadius: scaled(AUTH_CHOICE_FRAME.logoCard.radius),
 								backgroundColor: COLORS.surface,
+								borderColor: COLORS.border,
+								borderWidth: 1,
 								alignItems: "center",
 								justifyContent: "center",
-								boxShadow: `0 ${scaled(18)}px ${scaled(45)}px rgba(20, 28, 48, 0.06)`,
 							}}
 						>
 							<Image
@@ -427,6 +445,9 @@ export function AuthChoiceScreen() {
 						}}
 					>
 						<Text
+							accessibilityRole="button"
+							accessibilityLabel="Dayova, App-Informationen"
+							onPress={() => setShowReleaseInformation(true)}
 							className="text-center font-poppins font-semibold text-text"
 							style={{
 								fontSize: scaled(AUTH_CHOICE_FRAME.title.fontSize),
@@ -3405,78 +3426,121 @@ function AuthChoicePillButton({
 }
 
 function AuthBackgroundPattern({
+	iconColor,
+	isDark,
 	scale,
+	viewportWidth,
 	yOffset,
 }: {
+	iconColor: string;
+	isDark: boolean;
 	scale: number;
+	viewportWidth: number;
 	yOffset: number;
 }) {
-	const items = [
-		{
-			key: "palette-top",
-			x: AUTH_BACKGROUND_TILE.leftX,
-			y: 28,
-			icon: Palette,
-		},
-		{
-			key: "globe-top",
-			x: AUTH_BACKGROUND_TILE.centerX,
-			y: 44,
-			icon: Globe,
-		},
-		{
-			key: "telescope-top",
-			x: AUTH_BACKGROUND_TILE.rightX,
-			y: 26,
-			icon: Telescope,
-		},
-		{
-			key: "plant-mid",
-			x: AUTH_BACKGROUND_TILE.leftX,
-			y: 196,
-			icon: Plant,
-		},
-		{
-			key: "helmet-mid",
-			x: AUTH_BACKGROUND_TILE.rightX,
-			y: 188,
-			icon: GreekHelmet,
-		},
-		{
-			key: "atom-bottom",
-			x: AUTH_BACKGROUND_TILE.leftX,
-			y: 360,
-			icon: Atom,
-		},
-		{
-			key: "square-root-bottom",
-			x: AUTH_BACKGROUND_TILE.rightX,
-			y: 350,
-			icon: SquareRootSquare,
-		},
-	] as const;
+	const isTablet = viewportWidth >= 700;
+	const tileScale = isTablet ? viewportWidth / AUTH_CHOICE_FRAME.width : scale;
+	const iconScale = tileScale;
+	const tileSize = AUTH_BACKGROUND_TILE.size * tileScale;
+	const columnStep = AUTH_BACKGROUND_TILE.columnStep * scale;
+	const firstColumnLeft = isTablet
+		? ((AUTH_CHOICE_FRAME.width - AUTH_BACKGROUND_TILE.size) / 2 -
+				AUTH_BACKGROUND_TILE.columnStep) *
+			tileScale
+		: ((AUTH_CHOICE_FRAME.width - AUTH_BACKGROUND_TILE.size) / 2 -
+				AUTH_BACKGROUND_TILE.columnStep) *
+			scale;
+	const columnLefts = isTablet
+		? [
+				firstColumnLeft,
+				(AUTH_CHOICE_FRAME.width - AUTH_BACKGROUND_TILE.size) * 0.5 * tileScale,
+				((AUTH_CHOICE_FRAME.width - AUTH_BACKGROUND_TILE.size) / 2 +
+					AUTH_BACKGROUND_TILE.columnStep) *
+					tileScale,
+			]
+		: Array.from(
+				{
+					length: Math.ceil((viewportWidth - firstColumnLeft) / columnStep),
+				},
+				(_, index) => firstColumnLeft + index * columnStep,
+			);
+	const contentClearHalfWidth =
+		(AUTH_CHOICE_FRAME.width * scale - tileSize) / 2;
+	const frameTop = Math.max(0, yOffset - AUTH_CHOICE_FRAME.patternYOffset);
+	const tabletLogoTop = frameTop + AUTH_CHOICE_FRAME.logoCard.top * scale;
+	const tabletTitleTop = frameTop + AUTH_CHOICE_FRAME.title.top * scale;
+	const topIcons: Array<typeof Palette> = [Palette, Globe, Telescope];
+	const items: Array<{
+		icon: typeof Palette;
+		key: string;
+		left: number;
+		top: number;
+	}> = [];
+
+	for (const [index, left] of columnLefts.entries()) {
+		const tileCenter = left + tileSize / 2;
+		const side = tileCenter < viewportWidth / 2 ? -1 : 1;
+		const clearsCentralContent =
+			Math.abs(tileCenter - viewportWidth / 2) > contentClearHalfWidth;
+		items.push({
+			key: `top-${index}`,
+			left,
+			top: isTablet
+				? Math.max(0, tabletLogoTop - tileSize - (index === 1 ? 8 : 24) * scale)
+				: ((index % 3 === 1 ? 44 : 28) + yOffset) * scale,
+			icon: topIcons[index % topIcons.length] ?? Globe,
+		});
+
+		if (index === 1 || (!isTablet && !clearsCentralContent)) continue;
+		items.push({
+			key: `middle-${index}`,
+			left,
+			top: isTablet
+				? tabletLogoTop - (side < 0 ? 4 : 12) * scale
+				: ((side < 0 ? 196 : 188) + yOffset) * scale,
+			icon: side < 0 ? Plant : GreekHelmet,
+		});
+		items.push({
+			key: `bottom-${index}`,
+			left,
+			top: isTablet
+				? tabletTitleTop - (side < 0 ? 0 : 10) * scale
+				: ((side < 0 ? 360 : 350) + yOffset) * scale,
+			icon: side < 0 ? Atom : SquareRootSquare,
+		});
+	}
+
+	const fillColors = isDark
+		? AUTH_BACKGROUND_TILE.darkFillColors
+		: AUTH_BACKGROUND_TILE.lightFillColors;
+	const iconOpacity = isDark ? 0.18 : 0.2;
 
 	return (
-		<View className="flex-1">
+		<View
+			testID="auth-choice-background-pattern"
+			className="flex-1"
+			style={{ width: viewportWidth }}
+		>
 			{items.map((item) => {
 				const Icon = item.icon;
 				return (
 					<View
 						key={item.key}
+						testID="auth-choice-background-tile"
 						style={{
 							position: "absolute",
-							left: item.x * scale,
-							top: (item.y + yOffset) * scale,
-							width: AUTH_BACKGROUND_TILE.size * scale,
-							height: AUTH_BACKGROUND_TILE.size * scale,
-							borderRadius: AUTH_BACKGROUND_TILE.radius * scale,
+							left: item.left,
+							top: item.top,
+							width: tileSize,
+							height: tileSize,
+							borderRadius: AUTH_BACKGROUND_TILE.radius * tileScale,
 							overflow: "hidden",
 							alignItems: "center",
 							justifyContent: "center",
 						}}
 					>
 						<LinearGradient
-							colors={AUTH_BACKGROUND_TILE.fillColors}
+							colors={fillColors}
 							style={{
 								position: "absolute",
 								top: 0,
@@ -3485,11 +3549,16 @@ function AuthBackgroundPattern({
 								left: 0,
 							}}
 						/>
-						<Icon
-							size={AUTH_BACKGROUND_TILE.iconSize * scale}
-							color="rgba(26,26,26,0.14)"
-							strokeWidth={1.8 * scale}
-						/>
+						<View
+							testID="auth-choice-background-icon"
+							style={{ opacity: iconOpacity }}
+						>
+							<Icon
+								size={AUTH_BACKGROUND_TILE.iconSize * iconScale}
+								color={iconColor}
+								strokeWidth={AUTH_BACKGROUND_TILE.iconStrokeWidth}
+							/>
+						</View>
 					</View>
 				);
 			})}
