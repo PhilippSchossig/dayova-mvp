@@ -55,7 +55,7 @@ if (isReleaseConfig) {
 	validatePublicEnvForRelease(undefined, { platform: releasePlatform });
 }
 
-const APP_VERSION = "1.0.6";
+const APP_VERSION = "1.0.8";
 const BACKGROUND_COLOR = "#ffffff";
 // Keep this native launch color aligned with DARK_THEME_VARIABLES["--background"].
 // theme-css.test.ts prevents the values from drifting.
@@ -99,7 +99,8 @@ const config: ExpoConfig = {
 	ios: {
 		supportsTablet: true,
 		bundleIdentifier: isProduction ? "de.dayova.app" : "de.dayova.app-dev",
-		runtimeVersion: APP_VERSION,
+		// Screenshot-only release: retain the native runtime of production build 79.
+		runtimeVersion: "1.0.6",
 		infoPlist: {
 			ITSAppUsesNonExemptEncryption: false,
 			...IOS_PRIVACY_PURPOSE_STRINGS,
